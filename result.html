@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Check-in/Check-out Result</title>
+</head>
+<body>
+  <h1 id="greeting"></h1>
+  <p><strong>Timestamp:</strong> <span id="timestamp"></span></p>
+  <p><strong>Location:</strong> <a id="location" href="#" target="_blank">View on Google Maps</a></p>
+  <p><strong>Photo:</strong></p>
+  <img id="photo" src="" alt="Captured Photo" width="300" />
+
+  <script>
+    const data = JSON.parse(localStorage.getItem("checkinData"));
+
+    if (data) {
+      document.getElementById("greeting").innerText = 
+        data.action === "check-in" 
+          ? `Welcome, ${data.name}!` 
+          : `Goodbye, ${data.name}!`;
+
+      document.getElementById("timestamp").innerText = data.timestamp;
+      document.getElementById("location").href = data.location;
+      document.getElementById("location").innerText = data.location;
+      document.getElementById("photo").src = data.photo;
+    } else {
+      document.body.innerHTML = "<p>No check-in data found.</p>";
+    }
+  </script>
+</body>
+</html>
