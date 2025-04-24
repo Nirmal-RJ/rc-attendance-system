@@ -5,12 +5,40 @@ let latitude = 0;
 let longitude = 0;
 let latestDetection = null;
 
+// Performance monitoring
+const performance = {
+    modelLoadTime: 0,
+    detectionTime: 0,
+    lastDetectionStart: 0
+};
+
 // Initialize the application
 function initializeApp() {
-    addScanningEffect();
     setupEventListeners();
+    loadModels();
     addStyles();
 }
+
+// Pre-load models
+const loadModels = async () => {
+    try {
+        updateLoadingState('LOADING_MODELS');
+        const startTime = Date.now();
+
+        await Promise.all([
+            faceapi.nets.ssdMobilenetv1.load('/models'),
+            faceapi.nets.faceRecognitionNet.load('/models'),
+            faceapi.nets.faceLandmark68Net.load('/models')
+        ]);
+
+        performance.modelLoadTime = Date.now() - startTime;
+        console.log(`Models loaded in ${performance.modelLoadTime}ms`);
+        updateLoadingState('READY');
+    } catch (error) {
+        console.error("Error loading models:", error);
+        updateLoadingState('ERROR');
+    }
+};
 
 // Add required styles programmatically
 function addStyles() {
@@ -23,14 +51,16 @@ function addStyles() {
         }
 
         .scanner-container {
-            width: 640px !important;
+            display: none;
+            width: 500px !important;
             height: 480px !important;
             position: relative;
             overflow: hidden;
         }
 
         #video {
-            width: 640px !important;
+            display: none;
+            width: 500px !important;
             height: 480px !important;
             object-fit: cover;
         }
@@ -39,6 +69,15 @@ function addStyles() {
             position: absolute;
             top: 0;
             left: 0;
+            pointer-events: none;
+        }
+
+        .preload-images {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            opacity: 0;
             pointer-events: none;
         }
     `;
@@ -54,18 +93,30 @@ function setupEventListeners() {
 // Action setting function
 function setAction(type) {
     cleanupDetection();
+    
+    // Hide the welcome message
+    const welcomeMessage = document.querySelector('.welcome-message');
+    if (welcomeMessage) {
+        welcomeMessage.classList.add('hidden');
+    }
+
+    // Hide the buttons
     document.getElementsByClassName("checking-button")[0].style.display = "none";
     document.getElementsByClassName("checking-button")[1].style.display = "none";
 
     actionType = type;
     getLocation();
 
-     // Show the scanner container and video
-     const scannerContainer = document.querySelector('.scanner-container');
-     if (scannerContainer) {
-         scannerContainer.style.display = 'block';
-     }
+    // Add scanning effect and show camera
+    addScanningEffect();
+    
+    // Show the scanner container and video
+    const scannerContainer = document.querySelector('.scanner-container');
+    if (scannerContainer) {
+        scannerContainer.style.display = 'block';
+    }
     video.style.display = "block";
+
     startWebcam();
 }
 
@@ -76,7 +127,6 @@ function cleanupDetection() {
         video.detectionInterval = null;
     }
     
-    // Remove any existing canvas
     const existingCanvas = document.querySelector('canvas');
     if (existingCanvas) {
         existingCanvas.remove();
@@ -86,14 +136,8 @@ function cleanupDetection() {
 // Webcam handling
 async function startWebcam() {
     try {
-        // Cleanup any existing detection interval
+        updateLoadingState('INITIALIZING_CAMERA');
         cleanupDetection();
-
-        await Promise.all([
-            faceapi.nets.ssdMobilenetv1.loadFromUri("/models"),
-            faceapi.nets.faceRecognitionNet.loadFromUri("/models"),
-            faceapi.nets.faceLandmark68Net.loadFromUri("/models")
-        ]);
 
         const stream = await navigator.mediaDevices.getUserMedia({
             video: {
@@ -104,51 +148,66 @@ async function startWebcam() {
         });
         
         video.srcObject = stream;
-        
-        // Set initial video dimensions
         video.style.width = '640px';
         video.style.height = '480px';
         
-        updateScanningText("Camera initialized. Starting face detection...");
+        updateLoadingState('READY');
     } catch (error) {
         console.error("Webcam error:", error);
-        updateScanningText("Error accessing camera. Please check permissions.");
+        showErrorMessage("Camera Access Error", 
+            "This application requires camera access. Please ensure: <br>" +
+            "1. You're using HTTPS <br>" +
+            "2. Camera permissions are granted <br>" +
+            "3. Your camera is properly connected"
+        );
     }
 }
 
 // Face detection functions
 async function getLabeledFaceDescriptions() {
-    const labels = ["nita", "roopa", "hari", "khaja", "nirmal"];
+    const labels = ["nita", "roopa", "hari", "khaja"];
+    const maxRetries = 2;
+    
     try {
         const labeledDescriptors = await Promise.all(
             labels.map(async (label) => {
                 const descriptions = [];
-                for (let i = 1; i <= 5; i++) {
-                    try {
-                        const img = await faceapi.fetchImage(`./labels/${label}/${label}${i}.jpg`);
-                        const detections = await faceapi
-                            .detectSingleFace(img)
-                            .withFaceLandmarks()
-                            .withFaceDescriptor();
-                        
-                        if (detections) {
-                            descriptions.push(detections.descriptor);
+                
+                const imagePromises = Array.from({length: 5}, async (_, i) => {
+                    const index = i + 1;
+                    let retries = 0;
+                    
+                    while (retries < maxRetries) {
+                        try {
+                            const img = await faceapi.fetchImage(`./labels/${label}/${label}${index}.jpg`);
+                            const detection = await faceapi
+                                .detectSingleFace(img)
+                                .withFaceLandmarks()
+                                .withFaceDescriptor();
+                                
+                            if (detection) {
+                                return detection.descriptor;
+                            }
+                        } catch (error) {
+                            retries++;
+                            console.warn(`Retry ${retries} for ${label}${index}.jpg`);
                         }
-                    } catch (error) {
-                        console.warn(`Error processing ${label}${i}.jpg:`, error);
                     }
-                }
+                    return null;
+                });
+                
+                const results = await Promise.all(imagePromises);
+                descriptions.push(...results.filter(desc => desc !== null));
                 
                 return descriptions.length > 0 
                     ? new faceapi.LabeledFaceDescriptors(label, descriptions)
                     : null;
             })
         );
-
-        return labeledDescriptors.filter(descriptor => descriptor !== null);
+        
+        return labeledDescriptors.filter(desc => desc !== null);
     } catch (error) {
         console.error("Face description error:", error);
-        updateScanningText("Error loading face data. Please try again.");
         throw error;
     }
 }
@@ -156,8 +215,8 @@ async function getLabeledFaceDescriptions() {
 // Video play handler
 async function handleVideoPlay() {
     try {
-        // Clear any existing intervals and canvas
         cleanupDetection();
+        updateLoadingState('DETECTING_FACE');
 
         const labeledFaceDescriptors = await getLabeledFaceDescriptions();
         const faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors);
@@ -165,17 +224,14 @@ async function handleVideoPlay() {
         const canvas = faceapi.createCanvasFromMedia(video);
         document.body.append(canvas);
 
-        // Set fixed dimensions for canvas matching video size
         const displaySize = { 
             width: video.videoWidth || 640, 
             height: video.videoHeight || 480 
         };
         
-        // Maintain video size
         video.style.width = `${displaySize.width}px`;
         video.style.height = `${displaySize.height}px`;
         
-        // Match canvas to video size
         canvas.style.position = 'absolute';
         canvas.style.top = video.offsetTop + 'px';
         canvas.style.left = video.offsetLeft + 'px';
@@ -184,17 +240,20 @@ async function handleVideoPlay() {
 
         faceapi.matchDimensions(canvas, displaySize);
 
-        // Create a continuous detection loop
         const detectFace = async () => {
             try {
+                performance.lastDetectionStart = Date.now();
+
                 const detections = await faceapi
                     .detectSingleFace(video)
                     .withFaceLandmarks()
                     .withFaceDescriptor();
 
+                performance.detectionTime = Date.now() - performance.lastDetectionStart;
+
                 if (!detections) {
-                    updateScanningText("No face detected. Please position your face in the frame.");
-                    return; // Continue to next iteration
+                    updateLoadingState('DETECTING_FACE');
+                    return;
                 }
 
                 const resizedDetection = faceapi.resizeResults(detections, displaySize);
@@ -208,33 +267,27 @@ async function handleVideoPlay() {
                     captureAndSend(result.label);
                 }
 
-                // Clear the interval once a face is successfully detected
                 clearInterval(detectionInterval);
 
             } catch (error) {
                 console.error("Detection iteration error:", error);
-                updateScanningText("Error during face detection. Trying again...");
+                updateLoadingState('ERROR');
             }
         };
 
-        // Run face detection every 500ms
         const detectionInterval = setInterval(detectFace, 500);
-
-        // Store the interval ID to clear it when needed
         video.detectionInterval = detectionInterval;
-
-        // Initial detection attempt
         detectFace();
 
     } catch (error) {
         console.error("Video play error:", error);
-        updateScanningText("Error during face detection. Please try again.");
+        updateLoadingState('ERROR');
     }
 }
 
 // Capture and submission functions
 function promptForNameAndSubmit() {
-    updateScanningText("Face scanned - Please enter your details");
+    updateLoadingState('READY');
     captureAndSend(null);
 }
 
@@ -250,36 +303,24 @@ async function captureAndSend(recognizedName = null) {
 
         const name = recognizedName || prompt("Please enter your name:");
 
-        // get a new date (locale machine date time)
-        var date = new Date();        
-        var n = date.toDateString();        
-        var time = date.toLocaleTimeString();
-
-        // log the date in the browser console
-        //console.log('date:', n);
-        // log the time in the browser console
-        //console.log('time:',time);
-
         if (name) {
             const payload = {
                 name: name,
-                timestamp: n+" - "+time,
+                timestamp: new Date().toISOString(),
                 location: googleMapsUrl,
                 action: actionType,
                 photo: photoData
             };
 
             localStorage.setItem("checkinData", JSON.stringify(payload));
-            //console.log(JSON.stringify(payload));
             window.location.href = "../result.html";
         } else {
-            // If user cancels the prompt (name is null)
-            updateScanningText("Name entry cancelled. Resuming face detection...");
+            updateLoadingState('READY');
             handleVideoPlay();
         }
     } catch (error) {
         console.error("Capture error:", error);
-        updateScanningText("Error capturing image. Please try again.");
+        updateLoadingState('ERROR');
         handleVideoPlay();
     }
 }
@@ -294,45 +335,44 @@ function getLocation() {
             },
             () => {
                 console.error("Location error");
-                updateScanningText("Unable to get location. Please enable location services.");
+                showErrorMessage("Location Error", 
+                    "Unable to get location. Please enable location services."
+                );
             }
         );
     } else {
         console.error("Geolocation not supported");
-        updateScanningText("Geolocation is not supported by this browser.");
+        showErrorMessage("Location Error", 
+            "Geolocation is not supported by this browser."
+        );
     }
 }
 
 // UI Effects
 function addScanningEffect() {
-    // Check if scanner container already exists
     let container = document.querySelector('.scanner-container');
     if (!container) {
         container = document.createElement('div');
-        container.className = 'scanner-container scanning'; // Add scanning class
+        container.className = 'scanner-container scanning';
 
         const videoParent = video.parentNode;
         videoParent.insertBefore(container, video);
         container.appendChild(video);
 
-        // Add scanning line
         const scanLine = document.createElement('div');
         scanLine.className = 'scan-line';
         container.appendChild(scanLine);
 
-        // Add overlay
         const overlay = document.createElement('div');
         overlay.className = 'scan-overlay';
         container.appendChild(overlay);
 
-        // Add corners
         const corners = document.createElement('div');
         corners.className = 'scanner-corners';
         corners.innerHTML = '<div></div>';
         container.appendChild(corners);
     }
 
-    // Check if scanning text already exists
     let scanningText = document.querySelector('.scanning-text');
     if (!scanningText) {
         scanningText = document.createElement('div');
@@ -342,13 +382,26 @@ function addScanningEffect() {
     }
 }
 
+// Update loading state
+function updateLoadingState(state) {
+    const states = {
+        LOADING_MODELS: "Loading face detection models...",
+        INITIALIZING_CAMERA: "Initializing camera...",
+        DETECTING_FACE: "Detecting face...",
+        MATCHING_FACE: "Matching face...",
+        READY: "Ready for detection",
+        ERROR: "Error occurred. Please refresh."
+    };
+    
+    updateScanningText(states[state]);
+}
+
 // Update scanning text
 function updateScanningText(message) {
     const scanningText = document.querySelector('.scanning-text');
     if (scanningText) {
         scanningText.textContent = message;
     } else {
-        // Create the scanning text element if it doesn't exist
         const container = document.querySelector('.scanner-container');
         if (container) {
             const newScanningText = document.createElement('div');
@@ -359,8 +412,44 @@ function updateScanningText(message) {
     }
 }
 
+// Show error message
+function showErrorMessage(title, message) {
+    const errorMessage = document.createElement('div');
+    errorMessage.className = 'error-message';
+    errorMessage.innerHTML = `
+        <h3>${title}</h3>
+        <p>${message}</p>
+    `;
+    
+    const container = document.querySelector('.scanner-container');
+    if (container) {
+        container.style.display = 'none';
+        container.parentNode.insertBefore(errorMessage, container);
+    }
+}
+
+// Preload images
+function preloadImages() {
+    const labels = ["nita", "roopa", "hari", "khaja"];
+    const container = document.createElement('div');
+    container.className = 'preload-images';
+    
+    labels.forEach(label => {
+        for(let i = 1; i <= 5; i++) {
+            const img = new Image();
+            img.src = `./labels/${label}/${label}${i}.jpg`;
+            container.appendChild(img);
+        }
+    });
+    
+    document.body.appendChild(container);
+}
+
 // Add cleanup on page unload
 window.addEventListener('beforeunload', cleanupDetection);
 
 // Initialize the app when the document is ready
-document.addEventListener('DOMContentLoaded', initializeApp);
+document.addEventListener('DOMContentLoaded', () => {
+    initializeApp();
+    preloadImages();
+});

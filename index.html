@@ -3,14 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RC Attendance System</title>
-    <link rel="stylesheet" href="./css/style.css">    
+    <title>Face Detection System</title>
+    <link rel="stylesheet" href="./css/style.css">
 </head>
 <body>
-    <video id="video" width="600" height="450" autoplay muted></video>
-    <button class="checking-button" onclick="setAction('check-in')">Check-in</button>
-    <button class="checking-button" onclick="setAction('check-out')">Check-out</button>
-    <script defer src="./js/face-api.js"></script>
+    <div class="container">
+        <!-- Initial welcome message -->
+        <div class="welcome-message">
+            <h2>Welcome to Attendance System</h2>
+            <p>Please select an option below</p>
+        </div>
+
+        <!-- Video will be added here by JavaScript -->
+        <video id="video" width="320" height="240" autoplay muted></video>
+        
+        <!-- Buttons -->
+        <div class="button-container">
+            <button class="checking-button" onclick="setAction('check-in')">Check In</button>
+            <button class="checking-button" onclick="setAction('check-out')">Check Out</button>
+        </div>
+
+        <!-- Loading indicator -->
+        <div id="loadingIndicator" class="loading-indicator" style="display: none;">
+            <div class="spinner"></div>
+            <div class="loading-text">Loading...</div>
+        </div>
+    </div>
+
+    <script defer src="./js/face-api.min.js"></script>
     <script defer src="./js/script.js"></script>
 </body>
 </html>
