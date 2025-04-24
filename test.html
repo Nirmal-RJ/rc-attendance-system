@@ -6,50 +6,194 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mobile Face Recognition</title>
     <script src="./js/face-api.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
     <style>
+        * {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+        }
+    
         body {
-            font-family: sans-serif;
-            text-align: center;
-            background: #f5f5f5;
+          font-family: 'Inter', sans-serif;
+          background: linear-gradient(to bottom right, #0f2027, #203a43, #2c5364);
+          color: #ffffff;
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 2rem;
         }
-
-        video {
-            width: 320px;
-            height: 240px;
-            border: 1px solid #aaa;
+    
+        h2 {
+          font-family: 'Orbitron', sans-serif;
+          font-size: 2.5rem;
+          color: #00fff7;
+          margin-bottom: 0.5rem;
+          text-shadow: 0 0 10px rgba(0, 255, 247, 0.5);
         }
-
+    
+        h6 {
+          font-size: 1rem;
+          color: #ffffffcc;
+          margin-bottom: 2rem;
+        }
+    
+        .video-container {
+          position: relative;
+          width: 100%;
+          max-width: 400px;
+          border-radius: 16px;
+          overflow: hidden;
+          background: #1a1a1a;
+          border: 1px solid #00fff766;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+          margin-bottom: 2rem;
+        }
+    
+        #video {
+          width: 100%;
+          height: auto;
+          display: block;
+          border-radius: 12px;
+        }
+    
+        #scanner-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+          z-index: 10;
+        }
+    
+        .scan-line {
+          position: absolute;
+          left: 0;
+          width: 100%;
+          height: 3px;
+          background: linear-gradient(90deg, transparent, #00fff7, transparent);
+          animation: scan 4s ease-in-out infinite;
+        }
+    
+        @keyframes scan {
+          0% { top: 100%; }
+          50% { top: 0%; }
+          100% { top: 100%; }
+        }
+    
         #output {
-            margin-top: 1em;
-            font-size: 1.2em;
-            font-weight: bold;
+          font-size: 1.2rem;
+          margin-top: 1rem;
+          color: #00fff7;
+          text-shadow: 0 0 4px #00fff7aa;
         }
-
+    
         #loading {
-            color: #555;
-            font-style: italic;
+          color: #ccccccaa;
+          margin-top: 0.5rem;
+          font-style: italic;
         }
-
-        canvas {
-            display: none;
+    
+        #action-toast {
+          position: fixed;
+          bottom: 30px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: rgba(0, 10, 20, 0.9);
+          border: 1px solid #00fff7;
+          padding: 1rem 1.5rem;
+          border-radius: 16px;
+          text-align: center;
+          backdrop-filter: blur(10px);
+          z-index: 9999;
+          box-shadow: 0 0 20px #00fff733;
+          animation: fadeIn 0.4s ease-out;
+          display: none;
         }
-    </style>
+    
+        #action-toast p {
+          margin-bottom: 1rem;
+          font-size: 1.1rem;
+          color: #ffffff;
+        }
+    
+        #action-toast button {
+          background: linear-gradient(135deg, #00fff7, #00bcd4);
+          border: none;
+          color: #000;
+          padding: 0.6rem 1.5rem;
+          margin: 0 0.5rem;
+          border-radius: 30px;
+          font-weight: 600;
+          cursor: pointer;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          font-size: 0.95rem;
+          transition: all 0.3s ease;
+        }
+    
+        #action-toast button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 0 10px #00fff7cc;
+        }
+    
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+    
+        @media (min-width: 768px) {
+          h2 { font-size: 3rem; }
+          #output { font-size: 1.5rem; }
+        }
+    
+        @media (min-width: 1024px) {
+          .video-container { max-width: 500px; }
+          #output { font-size: 1.6rem; }
+        }
+      </style>
 </head>
 
 <body>
-    <h2>Face Recognition on Mobile</h2>
-    <video id="video" autoplay muted></video>
+    <h2>Red Chariots</h2>
+    <h6>Digital Attendance System</h6>
+
+    <div class="video-container">
+        <video id="video" autoplay muted playsinline></video>
+        <div id="scanner-overlay">
+            <div class="scan-line"></div>
+        </div>
+    </div>
     <div id="output">Initializing...</div>
     <div id="loading">Loading models, please wait...</div>
 
+    <div id="action-toast" style="display:none;">
+        <p>Select Action:</p>
+        <button onclick="confirmAction('check-in')">Check In</button>
+        <button onclick="confirmAction('check-out')">Check Out</button>
+    </div>
+
     <script>
-        let isProcessing = false; // Flag to prevent multiple captures
-        let actionType = "check-in";
+        let isProcessing = false;
+        let action = "";
         let latitude = 0;
         let longitude = 0;
 
+        function setAction(type) {
+            action = type;
+
+            document.getElementById('action-select').style.display = 'none';
+            document.querySelector('.video-container').style.display = 'block';
+            document.getElementById('output').style.display = 'block';
+            document.getElementById('loading').style.display = 'block';
+
+            start(); // now trigger face recognition after selection
+        }
+
         async function loadLabeledImages() {
-            const labels = ['nirmal', 'khaja']; // filenames in /photos/, e.g. john.jpg
+            const labels = ['nirmal', 'khaja'];
             return Promise.all(
                 labels.map(async label => {
                     const imgUrl = `./labels/${label}.jpg`;
@@ -67,49 +211,39 @@
         }
 
         async function captureAndRedirect(matchedLabel) {
-            if (isProcessing) return; // Prevent multiple captures
+            if (isProcessing) return;
             isProcessing = true;
 
-
             const video = document.getElementById('video');
-
-            // Create canvas and capture image
             const canvas = document.createElement('canvas');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            // Get image data
             const imageData = canvas.toDataURL('image/jpeg');
             const googleMapsUrl = `https://www.google.com/maps/place/${latitude},${longitude}/@${latitude},${longitude},17z`;
 
-            // get a new date (locale machine date time)
-            var date = new Date();
-            var n = date.toDateString();
-            var time = date.toLocaleTimeString();
+            const date = new Date();
+            const n = date.toDateString();
+            const time = date.toLocaleTimeString();
 
-            // Create data object
-            const currentTime = new Date();
             const data = {
                 name: matchedLabel,
                 timestamp: n + " - " + time,
                 location: googleMapsUrl,
-                photo: imageData
+                photo: imageData,
             };
 
-            // Store data in localStorage
-            localStorage.setItem('checkinData', JSON.stringify(data));
+            window.pendingCheckData = data;
 
-            // Stop all video tracks
             const stream = video.srcObject;
             if (stream) {
                 const tracks = stream.getTracks();
                 tracks.forEach(track => track.stop());
             }
 
-            // Redirect to result page
-            window.location.href = 'result.html';
+            document.getElementById('action-toast').style.display = 'block';
         }
 
         async function getLocation() {
@@ -119,91 +253,75 @@
                         position => {
                             latitude = position.coords.latitude;
                             longitude = position.coords.longitude;
-                            resolve(); // ✅ Got location
+                            resolve();
                         },
                         error => {
                             alert("Turn on location and reload to continue:", error.message);
-                            // ❗ Fallback if denied — don't block app
                             latitude = 0;
                             longitude = 0;
-                            //resolve(); // ✅ Continue anyway
                         },
-                        { timeout: 5000 } // optional timeout for faster fail
+                        { timeout: 5000 }
                     );
                 } else {
                     console.warn("Geolocation not supported.");
                     latitude = 0;
                     longitude = 0;
-                    resolve(); // ✅ Continue without blocking
+                    resolve();
                 }
             });
         }
 
+        function confirmAction(type) {
+            if (!window.pendingCheckData) return;
+
+            window.pendingCheckData.action = type;
+            localStorage.setItem('checkinData', JSON.stringify(window.pendingCheckData));
+
+            document.getElementById('action-toast').style.display = 'none';
+            window.location.href = 'result.html';
+        }
 
         async function start() {
             try {
-                // Load models
                 await faceapi.nets.tinyFaceDetector.loadFromUri('models');
                 await faceapi.nets.faceLandmark68Net.loadFromUri('models');
                 await faceapi.nets.faceRecognitionNet.loadFromUri('models');
                 document.getElementById('loading').style.display = 'none';
-
-                await getLocation(); // waits for coordinates to be set
-
-                // Load known faces
+                await getLocation();
                 const labeledDescriptors = await loadLabeledImages();
                 const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
-
-                // Start video
                 const video = document.getElementById('video');
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({
-                        video: {
-                            width: { ideal: 320 },
-                            height: { ideal: 240 },
-                            facingMode: 'user' // Use front camera on mobile devices
-                        }
-                    });
-                    video.srcObject = stream;
-                } catch (err) {
-                    alert("Camera access denied: " + err);
-                    return;
-                }
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 320 }, height: { ideal: 240 }, facingMode: 'user' }
+                });
+                video.srcObject = stream;
 
                 video.addEventListener('play', () => {
                     const processVideo = async () => {
                         if (video.paused || video.ended || isProcessing) return;
-
                         try {
                             const detections = await faceapi
                                 .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
                                 .withFaceLandmarks()
                                 .withFaceDescriptors();
-
                             const results = detections.map(d => faceMatcher.findBestMatch(d.descriptor));
-
                             const output = results.length
                                 ? results.map(r => r.toString()).join(', ')
                                 : "No face detected";
                             document.getElementById('output').innerText = output;
-
-                            // Check for match and capture
                             if (results.length > 0) {
                                 const match = results[0];
                                 if (match._label !== 'unknown' && !isProcessing) {
                                     await captureAndRedirect(match._label);
-                                    return; // Stop processing after capture
+                                    return;
                                 }
                             }
-
-                            // Continue processing frames if no match or capture
                             requestAnimationFrame(processVideo);
                         } catch (error) {
                             console.error("Error processing video:", error);
                             requestAnimationFrame(processVideo);
                         }
                     };
-
                     processVideo();
                 });
 
@@ -213,7 +331,6 @@
             }
         }
 
-        // Wait for the library to load
         if (typeof faceapi !== 'undefined') {
             start();
         } else {

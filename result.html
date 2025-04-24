@@ -5,46 +5,49 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Check-in/Check-out Result</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
 
   <style>
     :root {
-      --bg-dark: #0f172a;
-      --card-bg: rgba(255, 255, 255, 0.05);
+      --bg-dark: #101c2e;
+      --card-bg: rgba(255, 255, 255, 0.1);
       --text-primary: #ffffff;
-      --accent: #60a5fa;
+      --accent: #00d4ff;
       --error: #ef4444;
+      --border-radius: 15px;
+      --box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
     }
 
     body {
       margin: 0;
       padding: 40px 20px;
       min-height: 100vh;
-      font-family: 'Inter', sans-serif;
-      background: radial-gradient(ellipse at top, #1e293b 0%, #0f172a 100%);
+      font-family: 'Poppins', sans-serif;
+      background: radial-gradient(ellipse at top, #2b3a4f 0%, #101c2e 100%);
       color: var(--text-primary);
       display: flex;
       justify-content: center;
       align-items: center;
+      transition: all 0.4s ease;
     }
 
     .result-container {
       background: var(--card-bg);
       backdrop-filter: blur(20px);
       border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 20px;
+      border-radius: var(--border-radius);
       padding: 2.5rem;
       max-width: 800px;
       width: 100%;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
       text-align: center;
+      box-shadow: var(--box-shadow);
       animation: fadeInUp 0.6s ease;
     }
 
     h1 {
       font-size: 2.5rem;
       font-weight: 700;
-      background: linear-gradient(90deg, #60a5fa, #3b82f6);
+      background: linear-gradient(90deg, #00d4ff, #00a2ff);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       margin-bottom: 1.5rem;
@@ -63,18 +66,17 @@
       margin-bottom: 0.25rem;
     }
 
-
     img {
       margin: 2rem auto 1rem;
       max-width: 100%;
-      border-radius: 12px;
+      border-radius: var(--border-radius);
       border: 2px solid rgba(255, 255, 255, 0.1);
       transition: transform 0.3s ease;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     }
 
     img:hover {
-      transform: scale(1.03);
+      transform: scale(1.05);
     }
 
     .not-my-name-btn {
@@ -176,6 +178,18 @@
       .result-container {
         padding: 2.5rem 3.5rem;
       }
+
+      h1 {
+        font-size: 2.5rem;
+      }
+
+      p {
+        font-size: 1.1rem;
+      }
+
+      .not-my-name-btn {
+        padding: 0.8rem 2rem;
+      }
     }
   </style>
 </head>
@@ -184,9 +198,10 @@
   <div class="result-container">
     <h1 id="greeting"></h1>
     <p><strong>Timestamp:</strong> <span id="timestamp"></span></p>
-    <p id="loc"></p>
     <img id="photo" src="" alt="Captured Photo" />
-    <button id="notMyNameBtn" class="not-my-name-btn">Not my name (5)</button>
+    <div>
+      <button id="notMyNameBtn" class="not-my-name-btn">Not my name (5)</button>
+    </div>
   </div>
 
   <script>
@@ -200,7 +215,6 @@
 
       document.getElementById("timestamp").innerText = data.timestamp;
       document.getElementById("photo").src = data.photo;
-      document.getElementById("loc").innerText = data.location;
 
       initializeNotMyNameButton();
     } else {
@@ -271,7 +285,7 @@
     function showToastAndRedirect() {
       const toast = document.createElement("div");
 
-      const action = data.action;      
+      const action = data.action;
       toast.innerText = action === "check-in" ? "✅ Check-in successful!" : "✅ Check-out successful!";
 
       toast.style.position = "fixed";
@@ -290,17 +304,15 @@
 
       document.body.appendChild(toast);
 
-      // Fade it in
       setTimeout(() => {
         toast.style.opacity = "1";
       }, 100);
 
-      // Hide and redirect after 2 seconds
       setTimeout(() => {
         toast.style.opacity = "0";
         setTimeout(() => {
           toast.remove();
-          window.location.href = "./index.html"; // Change to your target page
+          window.location.href = "./test.html"; // Change to your target page
         }, 500);
       }, 2000);
     }
