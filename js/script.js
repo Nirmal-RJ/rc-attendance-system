@@ -1,5 +1,6 @@
 // Constants and global variables
 const video = document.getElementById("video");
+const MODEL_PATH = 'models';
 let actionType = "check-in";
 let latitude = 0;
 let longitude = 0;
@@ -12,77 +13,79 @@ const performance = {
     lastDetectionStart: 0
 };
 
+// Loading indicator functions
+function showLoadingIndicator(message = "Loading face detection models...") {
+    const existingIndicator = document.querySelector('.loading-indicator');
+    if (existingIndicator) return;
+
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'loading-indicator';
+    loadingDiv.innerHTML = `
+        <div class="spinner"></div>
+        <div class="loading-text">${message}</div>
+    `;
+    document.body.appendChild(loadingDiv);
+}
+
+function hideLoadingIndicator() {
+    const loadingDiv = document.querySelector('.loading-indicator');
+    if (loadingDiv) {
+        loadingDiv.remove();
+    }
+}
+
 // Initialize the application
-function initializeApp() {
-    setupEventListeners();
-    loadModels();
-    addStyles();
+async function initializeApp() {
+    try {
+        setupEventListeners();
+        await loadModels();
+        preloadImages();
+    } catch (error) {
+        console.error("Initialization error:", error);
+        showErrorMessage("Initialization Error", 
+            "Failed to initialize the application. Please refresh the page."
+        );
+    }
 }
 
 // Pre-load models
 const loadModels = async () => {
     try {
+        showLoadingIndicator();
         updateLoadingState('LOADING_MODELS');
         const startTime = Date.now();
 
+        // Check if models are already loaded
+        if (faceapi.nets.ssdMobilenetv1.isLoaded && 
+            faceapi.nets.faceRecognitionNet.isLoaded && 
+            faceapi.nets.faceLandmark68Net.isLoaded) {
+            console.log('Models already loaded');
+            hideLoadingIndicator();
+            return;
+        }
+
         await Promise.all([
-            faceapi.nets.ssdMobilenetv1.load('/models'),
-            faceapi.nets.faceRecognitionNet.load('/models'),
-            faceapi.nets.faceLandmark68Net.load('/models')
+            faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_PATH),
+            faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_PATH),
+            faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_PATH)
         ]);
 
         performance.modelLoadTime = Date.now() - startTime;
         console.log(`Models loaded in ${performance.modelLoadTime}ms`);
         updateLoadingState('READY');
+        hideLoadingIndicator();
     } catch (error) {
         console.error("Error loading models:", error);
+        hideLoadingIndicator();
+        showErrorMessage("Model Loading Error", 
+            "Failed to load face detection models. Please ensure:<br>" +
+            "1. You have internet connection<br>" +
+            "2. Model files exist in the correct directory<br>" +
+            "3. Page is refreshed"
+        );
         updateLoadingState('ERROR');
     }
 };
-
-// Add required styles programmatically
-function addStyles() {
-    const style = document.createElement('style');
-    style.textContent = `
-        .container {
-            position: relative;
-            width: 640px;
-            margin: 0 auto;
-        }
-
-        .scanner-container {
-            display: none;
-            width: 500px !important;
-            height: 480px !important;
-            position: relative;
-            overflow: hidden;
-        }
-
-        #video {
-            display: none;
-            width: 500px !important;
-            height: 480px !important;
-            object-fit: cover;
-        }
-
-        canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            pointer-events: none;
-        }
-
-        .preload-images {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            overflow: hidden;
-            opacity: 0;
-            pointer-events: none;
-        }
-    `;
-    document.head.append(style);
-}
 
 // Setup event listeners
 function setupEventListeners() {
@@ -91,33 +94,41 @@ function setupEventListeners() {
 }
 
 // Action setting function
-function setAction(type) {
-    cleanupDetection();
-    
-    // Hide the welcome message
-    const welcomeMessage = document.querySelector('.welcome-message');
-    if (welcomeMessage) {
-        welcomeMessage.classList.add('hidden');
+async function setAction(type) {
+    try {
+        cleanupDetection();
+        
+        // Hide the welcome message
+        const welcomeMessage = document.querySelector('.welcome-message');
+        if (welcomeMessage) {
+            welcomeMessage.classList.add('hidden');
+        }
+
+        // Hide the buttons
+        document.getElementsByClassName("checking-button")[0].style.display = "none";
+        document.getElementsByClassName("checking-button")[1].style.display = "none";
+
+        actionType = type;
+        getLocation();
+
+        // Ensure models are loaded
+        await loadModels();
+
+        // Add scanning effect and show camera
+        addScanningEffect();
+        
+        // Show the scanner container and video
+        const scannerContainer = document.querySelector('.scanner-container');
+        if (scannerContainer) {
+            scannerContainer.style.display = 'block';
+        }
+        video.style.display = "block";
+
+        await startWebcam();
+    } catch (error) {
+        console.error("Error in setAction:", error);
+        showErrorMessage("Initialization Error", "Failed to start the detection system.");
     }
-
-    // Hide the buttons
-    document.getElementsByClassName("checking-button")[0].style.display = "none";
-    document.getElementsByClassName("checking-button")[1].style.display = "none";
-
-    actionType = type;
-    getLocation();
-
-    // Add scanning effect and show camera
-    addScanningEffect();
-    
-    // Show the scanner container and video
-    const scannerContainer = document.querySelector('.scanner-container');
-    if (scannerContainer) {
-        scannerContainer.style.display = 'block';
-    }
-    video.style.display = "block";
-
-    startWebcam();
 }
 
 // Cleanup function
@@ -148,8 +159,6 @@ async function startWebcam() {
         });
         
         video.srcObject = stream;
-        video.style.width = '640px';
-        video.style.height = '480px';
         
         updateLoadingState('READY');
     } catch (error) {
@@ -165,7 +174,7 @@ async function startWebcam() {
 
 // Face detection functions
 async function getLabeledFaceDescriptions() {
-    const labels = ["nita", "roopa", "hari", "khaja"];
+    const labels = ["nita", "roopa", "hari", "khaja", "nirmal"];
     const maxRetries = 2;
     
     try {
@@ -224,17 +233,18 @@ async function handleVideoPlay() {
         const canvas = faceapi.createCanvasFromMedia(video);
         document.body.append(canvas);
 
-        const displaySize = { 
-            width: video.videoWidth || 640, 
-            height: video.videoHeight || 480 
+        const scannerContainer = document.querySelector('.scanner-container');
+        const displaySize = {
+            width: scannerContainer.clientWidth,
+            height: scannerContainer.clientHeight
         };
         
-        video.style.width = `${displaySize.width}px`;
-        video.style.height = `${displaySize.height}px`;
+        video.style.width = '100%';
+        video.style.height = '100%';
         
         canvas.style.position = 'absolute';
-        canvas.style.top = video.offsetTop + 'px';
-        canvas.style.left = video.offsetLeft + 'px';
+        canvas.style.top = scannerContainer.offsetTop + 'px';
+        canvas.style.left = scannerContainer.offsetLeft + 'px';
         canvas.width = displaySize.width;
         canvas.height = displaySize.height;
 
@@ -313,7 +323,7 @@ async function captureAndSend(recognizedName = null) {
             };
 
             localStorage.setItem("checkinData", JSON.stringify(payload));
-            window.location.href = "../result.html";
+            window.location.href = "./result.html";
         } else {
             updateLoadingState('READY');
             handleVideoPlay();
@@ -369,7 +379,6 @@ function addScanningEffect() {
 
         const corners = document.createElement('div');
         corners.className = 'scanner-corners';
-        corners.innerHTML = '<div></div>';
         container.appendChild(corners);
     }
 
@@ -401,14 +410,6 @@ function updateScanningText(message) {
     const scanningText = document.querySelector('.scanning-text');
     if (scanningText) {
         scanningText.textContent = message;
-    } else {
-        const container = document.querySelector('.scanner-container');
-        if (container) {
-            const newScanningText = document.createElement('div');
-            newScanningText.className = 'scanning-text';
-            newScanningText.textContent = message;
-            container.appendChild(newScanningText);
-        }
     }
 }
 
@@ -430,9 +431,13 @@ function showErrorMessage(title, message) {
 
 // Preload images
 function preloadImages() {
-    const labels = ["nita", "roopa", "hari", "khaja"];
+    const labels = ["nita", "roopa", "hari", "khaja", "nirmal"];
     const container = document.createElement('div');
     container.className = 'preload-images';
+
+    container.style.position = 'absolute';
+    container.style.pointerEvents = 'none';
+    container.style.opacity = 0;
     
     labels.forEach(label => {
         for(let i = 1; i <= 5; i++) {
@@ -445,11 +450,8 @@ function preloadImages() {
     document.body.appendChild(container);
 }
 
+// Initialize the app when the document is ready
+document.addEventListener('DOMContentLoaded', initializeApp);
+
 // Add cleanup on page unload
 window.addEventListener('beforeunload', cleanupDetection);
-
-// Initialize the app when the document is ready
-document.addEventListener('DOMContentLoaded', () => {
-    initializeApp();
-    preloadImages();
-});
