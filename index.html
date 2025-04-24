@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RC Attendance System</title>
-    <link rel="stylesheet" href="./css/style.css">
-    <script defer src="./js/face-api.js"></script>
-    <script defer src="./js/script.js"></script>
+    <link rel="stylesheet" href="./css/style.css">    
 </head>
 <body>
-    <video id="video" width="600" height="450" autoplay></video>
-    <button onclick="setAction('check-in')">Check-in</button>
-    <button onclick="setAction('check-out')">Check-out</button>
+    <video id="video" width="600" height="450" autoplay muted></video>
+    <button class="checking-button" onclick="setAction('check-in')">Check-in</button>
+    <button class="checking-button" onclick="setAction('check-out')">Check-out</button>
+    <script defer src="./js/face-api.js"></script>
+    <script defer src="./js/script.js"></script>
 </body>
 </html>

@@ -1,31 +1,308 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Check-in/Check-out Result</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --card-bg: rgba(255, 255, 255, 0.05);
+      --text-primary: #ffffff;
+      --accent: #60a5fa;
+      --error: #ef4444;
+    }
+
+    body {
+      margin: 0;
+      padding: 40px 20px;
+      min-height: 100vh;
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(ellipse at top, #1e293b 0%, #0f172a 100%);
+      color: var(--text-primary);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .result-container {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 2.5rem;
+      max-width: 800px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+      text-align: center;
+      animation: fadeInUp 0.6s ease;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #60a5fa, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1.5rem;
+    }
+
+    p {
+      margin: 1rem 0;
+      font-size: 1.1rem;
+      line-height: 1.6;
+    }
+
+    strong {
+      display: block;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+
+    img {
+      margin: 2rem auto 1rem;
+      max-width: 100%;
+      border-radius: 12px;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      transition: transform 0.3s ease;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    img:hover {
+      transform: scale(1.03);
+    }
+
+    .not-my-name-btn {
+      margin-top: 2rem;
+      padding: 0.8rem 2rem;
+      font-size: 1rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, #ef4444, #b91c1c);
+      color: white;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3);
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .not-my-name-btn:hover {
+      transform: translateY(-2px);
+      background: linear-gradient(135deg, #b91c1c, #ef4444);
+    }
+
+    .fade-out {
+      animation: fadeOut 0.4s ease forwards;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      to {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+    }
+
+    /* Mobile (≤ 480px) */
+    @media (max-width: 480px) {
+      body {
+        padding: 20px 10px;
+      }
+
+      .result-container {
+        padding: 1.5rem;
+      }
+
+      h1 {
+        font-size: 1.8rem;
+      }
+
+      p {
+        font-size: 1rem;
+      }
+
+      .not-my-name-btn {
+        width: 100%;
+        font-size: 0.95rem;
+        padding: 0.75rem 1.5rem;
+      }
+    }
+
+    /* Tablet (481px – 768px) */
+    @media (min-width: 481px) and (max-width: 768px) {
+      .result-container {
+        padding: 2rem;
+      }
+
+      h1 {
+        font-size: 2.2rem;
+      }
+
+      p {
+        font-size: 1.05rem;
+      }
+
+      .not-my-name-btn {
+        width: auto;
+        padding: 0.75rem 2rem;
+      }
+    }
+
+    /* Desktop (≥ 769px) */
+    @media (min-width: 769px) {
+      .result-container {
+        padding: 2.5rem 3.5rem;
+      }
+    }
+  </style>
 </head>
+
 <body>
-  <h1 id="greeting"></h1>
-  <p><strong>Timestamp:</strong> <span id="timestamp"></span></p>
-  <p><strong>Location:</strong> <a id="location" href="#" target="_blank">View on Google Maps</a></p>
-  <p><strong>Photo:</strong></p>
-  <img id="photo" src="" alt="Captured Photo" width="300" />
+  <div class="result-container">
+    <h1 id="greeting"></h1>
+    <p><strong>Timestamp:</strong> <span id="timestamp"></span></p>
+    <img id="photo" src="" alt="Captured Photo" />
+    <button id="notMyNameBtn" class="not-my-name-btn">Not my name (5)</button>
+  </div>
 
   <script>
     const data = JSON.parse(localStorage.getItem("checkinData"));
 
     if (data) {
-      document.getElementById("greeting").innerText = 
-        data.action === "check-in" 
-          ? `Welcome, ${data.name}!` 
+      document.getElementById("greeting").innerText =
+        data.action === "check-in"
+          ? `Welcome, ${data.name}!`
           : `Goodbye, ${data.name}!`;
 
       document.getElementById("timestamp").innerText = data.timestamp;
-      document.getElementById("location").href = data.location;
-      document.getElementById("location").innerText = data.location;
       document.getElementById("photo").src = data.photo;
+
+      initializeNotMyNameButton();
     } else {
-      document.body.innerHTML = "<p>No check-in data found.</p>";
+      document.body.innerHTML = "<p style='text-align:center;'>No check-in data found.</p>";
+    }
+
+    function initializeNotMyNameButton() {
+      const button = document.getElementById('notMyNameBtn');
+      let countdown = 5;
+      let timer;
+
+      function updateButtonText() {
+        button.textContent = `Not my name (${countdown})`;
+      }
+
+      function startCountdown() {
+        updateButtonText();
+        timer = setInterval(() => {
+          countdown--;
+          if (countdown > 0) {
+            updateButtonText();
+          } else {
+            clearInterval(timer);
+            button.classList.add('fade-out');
+            setTimeout(() => {
+              button.remove();
+            }, 400);
+            showToastAndRedirect();
+          }
+        }, 1000);
+      }
+
+      button.addEventListener('click', () => {
+        clearInterval(timer);
+        promptForCorrectName();
+      });
+
+      startCountdown();
+    }
+
+    function promptForCorrectName() {
+      const name = prompt("Please enter your correct name:");
+      if (name && name.trim()) {
+        updateNameDisplay(name.trim());
+      }
+    }
+
+    function updateNameDisplay(name) {
+      const greeting = document.getElementById('greeting');
+      if (greeting) {
+        const action = data.action;
+        greeting.innerText = action === "check-in"
+          ? `Welcome, ${name} !`
+          : `Goodbye, ${name} !`;
+      }
+
+      const button = document.getElementById('notMyNameBtn');
+      if (button) button.remove();
+
+      if (data) {
+        data.name = name;
+        localStorage.setItem("checkinData", JSON.stringify(data));
+
+        showToastAndRedirect();
+      }
+    }
+
+    function showToastAndRedirect() {
+      const toast = document.createElement("div");
+
+      const action = data.action;      
+      toast.innerText = action === "check-in" ? "✅ Check-in successful!" : "✅ Check-out successful!";
+
+      toast.style.position = "fixed";
+      toast.style.bottom = "40px";
+      toast.style.left = "50%";
+      toast.style.transform = "translateX(-50%)";
+      toast.style.background = "#16a34a"; // green
+      toast.style.color = "white";
+      toast.style.padding = "1rem 2rem";
+      toast.style.borderRadius = "30px";
+      toast.style.fontSize = "1rem";
+      toast.style.fontWeight = "600";
+      toast.style.boxShadow = "0 8px 24px rgba(0,0,0,0.2)";
+      toast.style.opacity = "0";
+      toast.style.transition = "opacity 0.4s ease";
+
+      document.body.appendChild(toast);
+
+      // Fade it in
+      setTimeout(() => {
+        toast.style.opacity = "1";
+      }, 100);
+
+      // Hide and redirect after 2 seconds
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        setTimeout(() => {
+          toast.remove();
+          window.location.href = "../index.html"; // Change to your target page
+        }, 500);
+      }, 2000);
     }
   </script>
 </body>
+
 </html>
