@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Face Recognition</title>
+    <script src="./js/face-api.min.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            background: #f5f5f5;
+        }
+
+        video {
+            width: 320px;
+            height: 240px;
+            border: 1px solid #aaa;
+        }
+
+        #output {
+            margin-top: 1em;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        #loading {
+            color: #555;
+            font-style: italic;
+        }
+
+        canvas {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Face Recognition on Mobile</h2>
+    <video id="video" autoplay muted></video>
+    <div id="output">Initializing...</div>
+    <div id="loading">Loading models, please wait...</div>
+
+    <script>
+        let isProcessing = false; // Flag to prevent multiple captures
+        let actionType = "check-in";
+        let latitude = 0;
+        let longitude = 0;
+
+        async function loadLabeledImages() {
+            const labels = ['nirmal', 'khaja']; // filenames in /photos/, e.g. john.jpg
+            return Promise.all(
+                labels.map(async label => {
+                    const imgUrl = `./labels/${label}.jpg`;
+                    const img = await faceapi.fetchImage(imgUrl);
+                    const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
+                        .withFaceLandmarks()
+                        .withFaceDescriptor();
+                    if (!detection) {
+                        console.warn(`No face detected in ${label}.jpg`);
+                        return null;
+                    }
+                    return new faceapi.LabeledFaceDescriptors(label, [detection.descriptor]);
+                })
+            ).then(data => data.filter(d => d !== null));
+        }
+
+        async function captureAndRedirect(matchedLabel) {
+            if (isProcessing) return; // Prevent multiple captures
+            isProcessing = true;
+
+
+            const video = document.getElementById('video');
+
+            // Create canvas and capture image
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Get image data
+            const imageData = canvas.toDataURL('image/jpeg');
+            const googleMapsUrl = `https://www.google.com/maps/place/${latitude},${longitude}/@${latitude},${longitude},17z`;
+
+            // get a new date (locale machine date time)
+            var date = new Date();
+            var n = date.toDateString();
+            var time = date.toLocaleTimeString();
+
+            // Create data object
+            const currentTime = new Date();
+            const data = {
+                name: matchedLabel,
+                timestamp: n + " - " + time,
+                location: googleMapsUrl,
+                photo: imageData
+            };
+
+            // Store data in localStorage
+            localStorage.setItem('checkinData', JSON.stringify(data));
+
+            // Stop all video tracks
+            const stream = video.srcObject;
+            if (stream) {
+                const tracks = stream.getTracks();
+                tracks.forEach(track => track.stop());
+            }
+
+            // Redirect to result page
+            window.location.href = 'result.html';
+        }
+
+        async function getLocation() {
+            return new Promise((resolve) => {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        position => {
+                            latitude = position.coords.latitude;
+                            longitude = position.coords.longitude;
+                            resolve(); // ✅ Got location
+                        },
+                        error => {
+                            alert("Turn on location and reload to continue:", error.message);
+                            // ❗ Fallback if denied — don't block app
+                            latitude = 0;
+                            longitude = 0;
+                            //resolve(); // ✅ Continue anyway
+                        },
+                        { timeout: 5000 } // optional timeout for faster fail
+                    );
+                } else {
+                    console.warn("Geolocation not supported.");
+                    latitude = 0;
+                    longitude = 0;
+                    resolve(); // ✅ Continue without blocking
+                }
+            });
+        }
+
+
+        async function start() {
+            try {
+                // Load models
+                await faceapi.nets.tinyFaceDetector.loadFromUri('models');
+                await faceapi.nets.faceLandmark68Net.loadFromUri('models');
+                await faceapi.nets.faceRecognitionNet.loadFromUri('models');
+                document.getElementById('loading').style.display = 'none';
+
+                await getLocation(); // waits for coordinates to be set
+
+                // Load known faces
+                const labeledDescriptors = await loadLabeledImages();
+                const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
+
+                // Start video
+                const video = document.getElementById('video');
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            width: { ideal: 320 },
+                            height: { ideal: 240 },
+                            facingMode: 'user' // Use front camera on mobile devices
+                        }
+                    });
+                    video.srcObject = stream;
+                } catch (err) {
+                    alert("Camera access denied: " + err);
+                    return;
+                }
+
+                video.addEventListener('play', () => {
+                    const processVideo = async () => {
+                        if (video.paused || video.ended || isProcessing) return;
+
+                        try {
+                            const detections = await faceapi
+                                .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+                                .withFaceLandmarks()
+                                .withFaceDescriptors();
+
+                            const results = detections.map(d => faceMatcher.findBestMatch(d.descriptor));
+
+                            const output = results.length
+                                ? results.map(r => r.toString()).join(', ')
+                                : "No face detected";
+                            document.getElementById('output').innerText = output;
+
+                            // Check for match and capture
+                            if (results.length > 0) {
+                                const match = results[0];
+                                if (match._label !== 'unknown' && !isProcessing) {
+                                    await captureAndRedirect(match._label);
+                                    return; // Stop processing after capture
+                                }
+                            }
+
+                            // Continue processing frames if no match or capture
+                            requestAnimationFrame(processVideo);
+                        } catch (error) {
+                            console.error("Error processing video:", error);
+                            requestAnimationFrame(processVideo);
+                        }
+                    };
+
+                    processVideo();
+                });
+
+            } catch (error) {
+                console.error("Error in face recognition:", error);
+                document.getElementById('output').innerText = "Error loading face recognition";
+            }
+        }
+
+        // Wait for the library to load
+        if (typeof faceapi !== 'undefined') {
+            start();
+        } else {
+            window.addEventListener('load', start);
+        }
+    </script>
+</body>
+
+</html>

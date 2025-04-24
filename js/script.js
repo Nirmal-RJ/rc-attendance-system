@@ -42,11 +42,13 @@ async function initializeApp() {
         preloadImages();
     } catch (error) {
         console.error("Initialization error:", error);
-        showErrorMessage("Initialization Error", 
+        showErrorMessage("Initialization Error",
             "Failed to initialize the application. Please refresh the page."
         );
     }
 }
+
+var modelLoaded = false;
 
 // Pre-load models
 const loadModels = async () => {
@@ -55,9 +57,10 @@ const loadModels = async () => {
         updateLoadingState('LOADING_MODELS');
         const startTime = Date.now();
 
+
         // Check if models are already loaded
-        if (faceapi.nets.ssdMobilenetv1.isLoaded && 
-            faceapi.nets.faceRecognitionNet.isLoaded && 
+        if (faceapi.nets.ssdMobilenetv1.isLoaded &&
+            faceapi.nets.faceRecognitionNet.isLoaded &&
             faceapi.nets.faceLandmark68Net.isLoaded) {
             console.log('Models already loaded');
             hideLoadingIndicator();
@@ -68,16 +71,19 @@ const loadModels = async () => {
             faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_PATH),
             faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_PATH),
             faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_PATH)
+
         ]);
 
         performance.modelLoadTime = Date.now() - startTime;
         console.log(`Models loaded in ${performance.modelLoadTime}ms`);
+        modelLoaded = true;
+
         updateLoadingState('READY');
         hideLoadingIndicator();
     } catch (error) {
         console.error("Error loading models:", error);
         hideLoadingIndicator();
-        showErrorMessage("Model Loading Error", 
+        showErrorMessage("Model Loading Error",
             "Failed to load face detection models. Please ensure:<br>" +
             "1. You have internet connection<br>" +
             "2. Model files exist in the correct directory<br>" +
@@ -94,41 +100,45 @@ function setupEventListeners() {
 }
 
 // Action setting function
-async function setAction(type) {
-    try {
-        cleanupDetection();
-        
-        // Hide the welcome message
-        const welcomeMessage = document.querySelector('.welcome-message');
-        if (welcomeMessage) {
-            welcomeMessage.classList.add('hidden');
+async function setAction(type) 
+{
+    if(modelLoaded == true)
+    {
+        try {
+            cleanupDetection();
+    
+            // Hide the welcome message
+            const welcomeMessage = document.querySelector('.welcome-message');
+            if (welcomeMessage) {
+                welcomeMessage.classList.add('hidden');
+            }
+    
+            // Hide the buttons
+            document.getElementsByClassName("checking-button")[0].style.display = "none";
+            document.getElementsByClassName("checking-button")[1].style.display = "none";
+    
+            actionType = type;
+            getLocation();
+    
+            // Ensure models are loaded
+            await loadModels();
+    
+            // Add scanning effect and show camera
+            addScanningEffect();
+    
+            // Show the scanner container and video
+            const scannerContainer = document.querySelector('.scanner-container');
+            if (scannerContainer) {
+                scannerContainer.style.display = 'block';
+            }
+            video.style.display = "block";
+    
+            await startWebcam();
+        } catch (error) {
+            console.error("Error in setAction:", error);
+            showErrorMessage("Initialization Error", "Failed to start the detection system.");
         }
-
-        // Hide the buttons
-        document.getElementsByClassName("checking-button")[0].style.display = "none";
-        document.getElementsByClassName("checking-button")[1].style.display = "none";
-
-        actionType = type;
-        getLocation();
-
-        // Ensure models are loaded
-        await loadModels();
-
-        // Add scanning effect and show camera
-        addScanningEffect();
-        
-        // Show the scanner container and video
-        const scannerContainer = document.querySelector('.scanner-container');
-        if (scannerContainer) {
-            scannerContainer.style.display = 'block';
-        }
-        video.style.display = "block";
-
-        await startWebcam();
-    } catch (error) {
-        console.error("Error in setAction:", error);
-        showErrorMessage("Initialization Error", "Failed to start the detection system.");
-    }
+    }    
 }
 
 // Cleanup function
@@ -137,7 +147,7 @@ function cleanupDetection() {
         clearInterval(video.detectionInterval);
         video.detectionInterval = null;
     }
-    
+
     const existingCanvas = document.querySelector('canvas');
     if (existingCanvas) {
         existingCanvas.remove();
@@ -157,13 +167,13 @@ async function startWebcam() {
             },
             audio: false
         });
-        
+
         video.srcObject = stream;
-        
+
         updateLoadingState('READY');
     } catch (error) {
         console.error("Webcam error:", error);
-        showErrorMessage("Camera Access Error", 
+        showErrorMessage("Camera Access Error",
             "This application requires camera access. Please ensure: <br>" +
             "1. You're using HTTPS <br>" +
             "2. Camera permissions are granted <br>" +
@@ -175,17 +185,17 @@ async function startWebcam() {
 // Face detection functions
 async function getLabeledFaceDescriptions() {
     const labels = ["nita", "roopa", "hari", "khaja", "nirmal"];
-    const maxRetries = 2;
-    
+    const maxRetries = 3;
+
     try {
         const labeledDescriptors = await Promise.all(
             labels.map(async (label) => {
                 const descriptions = [];
-                
-                const imagePromises = Array.from({length: 5}, async (_, i) => {
+
+                const imagePromises = Array.from({ length: 1 }, async (_, i) => {
                     const index = i + 1;
                     let retries = 0;
-                    
+
                     while (retries < maxRetries) {
                         try {
                             const img = await faceapi.fetchImage(`./labels/${label}/${label}${index}.jpg`);
@@ -193,7 +203,7 @@ async function getLabeledFaceDescriptions() {
                                 .detectSingleFace(img)
                                 .withFaceLandmarks()
                                 .withFaceDescriptor();
-                                
+
                             if (detection) {
                                 return detection.descriptor;
                             }
@@ -204,16 +214,16 @@ async function getLabeledFaceDescriptions() {
                     }
                     return null;
                 });
-                
+
                 const results = await Promise.all(imagePromises);
                 descriptions.push(...results.filter(desc => desc !== null));
-                
-                return descriptions.length > 0 
+
+                return descriptions.length > 0
                     ? new faceapi.LabeledFaceDescriptors(label, descriptions)
                     : null;
             })
         );
-        
+
         return labeledDescriptors.filter(desc => desc !== null);
     } catch (error) {
         console.error("Face description error:", error);
@@ -238,10 +248,10 @@ async function handleVideoPlay() {
             width: scannerContainer.clientWidth,
             height: scannerContainer.clientHeight
         };
-        
+
         video.style.width = '100%';
         video.style.height = '100%';
-        
+
         canvas.style.position = 'absolute';
         canvas.style.top = scannerContainer.offsetTop + 'px';
         canvas.style.left = scannerContainer.offsetLeft + 'px';
@@ -252,7 +262,8 @@ async function handleVideoPlay() {
 
         const detectFace = async () => {
             try {
-                performance.lastDetectionStart = Date.now();
+                //performance.lastDetectionStart = Date.now();
+                performance.lastDetectionStart = performance.modelLoadTime;
 
                 const detections = await faceapi
                     .detectSingleFace(video)
@@ -313,10 +324,17 @@ async function captureAndSend(recognizedName = null) {
 
         const name = recognizedName || prompt("Please enter your name:");
 
+        console.log(`Detection took: ${performance.detectionTime}ms`);
+
+        // get a new date (locale machine date time)
+        var date = new Date();        
+        var n = date.toDateString();        
+        var time = date.toLocaleTimeString();
+
         if (name) {
             const payload = {
                 name: name,
-                timestamp: new Date().toISOString(),
+                timestamp: n+" - "+time,
                 location: googleMapsUrl,
                 action: actionType,
                 photo: photoData
@@ -345,14 +363,14 @@ function getLocation() {
             },
             () => {
                 console.error("Location error");
-                showErrorMessage("Location Error", 
+                showErrorMessage("Location Error",
                     "Unable to get location. Please enable location services."
                 );
             }
         );
     } else {
         console.error("Geolocation not supported");
-        showErrorMessage("Location Error", 
+        showErrorMessage("Location Error",
             "Geolocation is not supported by this browser."
         );
     }
@@ -401,7 +419,7 @@ function updateLoadingState(state) {
         READY: "Ready for detection",
         ERROR: "Error occurred. Please refresh."
     };
-    
+
     updateScanningText(states[state]);
 }
 
@@ -421,7 +439,7 @@ function showErrorMessage(title, message) {
         <h3>${title}</h3>
         <p>${message}</p>
     `;
-    
+
     const container = document.querySelector('.scanner-container');
     if (container) {
         container.style.display = 'none';
@@ -438,15 +456,15 @@ function preloadImages() {
     container.style.position = 'absolute';
     container.style.pointerEvents = 'none';
     container.style.opacity = 0;
-    
+
     labels.forEach(label => {
-        for(let i = 1; i <= 5; i++) {
+        for (let i = 1; i <= 5; i++) {
             const img = new Image();
             img.src = `./labels/${label}/${label}${i}.jpg`;
             container.appendChild(img);
         }
     });
-    
+
     document.body.appendChild(container);
 }
 
