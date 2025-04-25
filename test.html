@@ -564,6 +564,7 @@
                 setTimeout(() => {
                     toast.remove();
                     //location.reload();
+                    action = "";
                     resetToScanningState(); // instead of reload
                 }, 500);
             }, 2000);
@@ -592,7 +593,7 @@
 
                     video.addEventListener('play', () => {
                         const processVideo = async () => {
-                            if (video.paused || video.ended || isProcessing) return;
+                            if (video.paused || video.ended || isProcessing && action == "") return;
 
                             try {
                                 const detections = await faceapi
