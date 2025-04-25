@@ -125,20 +125,46 @@
             display: none;
         }
 
+        #video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            min-width: 100vw;
+            min-height: 100vh;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        #video-background video {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            transform: translate(-50%, -50%);
+            object-fit: cover;
+            z-index: -1;
+        }
+
         #action-panel {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 1);
+            /*background-color: rgba(0, 0, 0, 1);*/
+            background: linear-gradient(135deg, #0a192f, #3a5a7c);            
             display: flex;
-            justify-content: center;
+            justify-content: start;
             align-items: center;
             flex-direction: column;
             z-index: 9999;
             opacity: 1;
-            transition: opacity 1s ease-out;
+            transition: opacity 1s ease-out;          
         }
 
         #action-panel.hidden {
@@ -147,10 +173,11 @@
         }
 
         #action-panel h2 {
+            margin-top: 25vh;
             font-size: 2.5rem;
             color: #ff0d00;
             margin-bottom: 2rem;
-            text-shadow: 0 0 20px #ff6600;
+            text-shadow: 0 0 20px #ff3c00;
         }
 
         #action-select {
@@ -401,7 +428,8 @@
             <button id="notMyNameBtn" class="not-my-name-btn">Not my name (5)</button>
         </div>
         <h1 id="greeting"></h1>
-        <p><strong>Timestamp:</strong> <span id="timestamp"></span></p>
+        <p><strong>Time:</strong><span id="timestamp" style="font-family: 'Courier New', Courier, monospace;"></span>
+        </p>
         <img id="photo" src="" alt="Captured Photo" />
     </div>
 
