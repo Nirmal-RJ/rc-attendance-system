@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Descriptors</title>
+    <script src="./js/face-api.min.js"></script>
+</head>
+<body>
+    <h2>Generating Descriptors...</h2>
+    <pre id="output"></pre>
+    <a id="downloadLink" style="display: none;">Download descriptors.json</a>
+
+    <script>
+        async function generateDescriptors() {
+            // Load face-api.js models
+            await faceapi.nets.tinyFaceDetector.loadFromUri('models');
+            await faceapi.nets.faceLandmark68Net.loadFromUri('models');
+            await faceapi.nets.faceRecognitionNet.loadFromUri('models');
+
+            const labels = ['nirmal', 'khaja', 'nita', 'hari', 'roopa', 'muni', 'abitha', 'veena', 'vasanth', 'mani', 'kili', 'palani'];
+            const descriptorsData = {};
+
+            for (const label of labels) {
+                descriptorsData[label] = [];
+                for (let i = 1; i <= 5; i++) { // Assuming 5 images per label
+                    const imgUrl = `./labels/${label}/${label}${i}.jpg`;
+                    try {
+                        const img = await faceapi.fetchImage(imgUrl);
+                        const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
+                            .withFaceLandmarks()
+                            .withFaceDescriptor();
+
+                        if (detection) {
+                            descriptorsData[label].push(Array.from(detection.descriptor));
+                        }
+                    } catch (error) {
+                        console.error(`Error processing ${imgUrl}:`, error);
+                    }
+                }
+            }
+
+            // Convert to JSON and enable download
+            const jsonData = JSON.stringify(descriptorsData, null, 2);
+            const blob = new Blob([jsonData], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            document.getElementById('downloadLink').href = url;
+            document.getElementById('downloadLink').style.display = 'block';
+            document.getElementById('output').textContent = jsonData;
+        }
+
+        // Start generation when the page loads
+        generateDescriptors();
+    </script>
+</body>
+</html>

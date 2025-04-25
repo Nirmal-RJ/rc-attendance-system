@@ -1,0 +1,29 @@
+[25-Apr-2025 10:03:42 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Access denied for user 'root'@'localhost' (using password: NO) in /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/php/login-validation.php:9
+Stack trace:
+#0 /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/php/login-validation.php(9): mysqli->__construct()
+#1 {main}
+  thrown in /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/php/login-validation.php on line 9
+[25-Apr-2025 10:12:40 UTC] PHP Warning:  Undefined array key "key1" in /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/insert.php on line 23
+[25-Apr-2025 10:12:40 UTC] PHP Warning:  Undefined array key "key2" in /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/insert.php on line 24
+[25-Apr-2025 10:12:40 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'rc-attendance-system.your_table_name' doesn't exist in /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/insert.php:29
+Stack trace:
+#0 /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/insert.php(29): mysqli->query()
+#1 {main}
+  thrown in /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/insert.php on line 29
+[25-Apr-2025 10:22:02 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Access denied for user 'attendance_system'@'localhost' (using password: YES) in /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/insert.php:9
+Stack trace:
+#0 /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/insert.php(9): mysqli->__construct()
+#1 {main}
+  thrown in /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/insert.php on line 9
+[25-Apr-2025 10:27:27 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Access denied for user 'attendance_system'@'localhost' (using password: YES) in /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/insert.php:9
+Stack trace:
+#0 /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/insert.php(9): mysqli->__construct()
+#1 {main}
+  thrown in /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/insert.php on line 9
+[25-Apr-2025 10:28:18 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Access denied for user 'attendance_system'@'localhost' (using password: YES) in /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/insert.php:9
+Stack trace:
+#0 /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/insert.php(9): mysqli->__construct()
+#1 {main}
+  thrown in /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/insert.php on line 9
+[25-Apr-2025 15:27:49 UTC] PHP Warning:  Undefined array key "username" in /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/login-validation.php on line 19
+[25-Apr-2025 15:27:49 UTC] PHP Warning:  Undefined array key "password" in /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/login-validation.php on line 20
