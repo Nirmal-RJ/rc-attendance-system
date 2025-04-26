@@ -16,7 +16,9 @@
             await faceapi.nets.faceLandmark68Net.loadFromUri('models');
             await faceapi.nets.faceRecognitionNet.loadFromUri('models');
 
-            const labels = ['nirmal', 'khaja', 'nita', 'hari', 'roopa', 'muni', 'abitha', 'veena', 'vasanth', 'mani', 'kili', 'palani'];
+            /*const labels = ['nirmal', 'khaja', 'nita', 'hari', 'roopa', 'muni', 'abitha', 'veena', 'vasanth', 'mani', 'kili', 'palani', 'kumar', 'praveen', 'vk', 'musthafa', 'ali', 'aarthi', 'ijaz', 'pooja', 'pallavi'];*/
+            
+            const labels = ['pallavi','nirmal'];
             const descriptorsData = {};
 
             for (const label of labels) {

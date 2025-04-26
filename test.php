@@ -1,17 +1,5 @@
 <?php
-session_start();
-<<<<<<<< HEAD:test.php
 
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    // Not logged in, redirect to login
-    header("Location: ./login.html");
-========
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    // Not logged in, redirect to login
-    header("Location: ../login.html");
->>>>>>>> 734363640cb4171a4cae9cc370d164a0b85bcc4b:php/test.php
-    exit();
-}
 ?>
 
 
@@ -47,7 +35,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
         }
 
         h2 {
-            font-size: 2.5rem;
+            font-size: 1.5rem;
             text-align: center;
             color: #ff0d00;
             margin-bottom: 2rem;
@@ -190,12 +178,13 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
         }
 
         #action-panel h2 {
-            margin-top: 25vh;
-            font-size: 2.5rem;
+            /*margin-top: 25vh;*/
+            font-size: 1.5rem;
             color: #ff0d00;
             margin-bottom: 2rem;
             text-shadow: 0 0 20px #ff3c00;
         }
+        
 
         #action-select {
             display: flex;
@@ -208,7 +197,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             border: none;
             color: white;
             padding: 1em 2em;
-            font-size: 1.2rem;
+            font-size: 1rem;
             font-weight: bold;
             border-radius: 25px;
             cursor: pointer;
@@ -224,7 +213,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 
         @media (min-width: 768px) {
             h2 {
-                font-size: 3rem;
+                font-size: 1.5rem;
             }
 
             #output {
@@ -262,7 +251,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: var(--border-radius);
-            padding: 2.5rem;
+            padding: 1rem;
             max-width: 800px;
             width: 100%;
             text-align: center;
@@ -273,10 +262,11 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
         .result-container h1 {
             font-size: 2.5rem;
             font-weight: 700;
-            background: linear-gradient(90deg, #00d4ff, #00a2ff);
+            /*background: linear-gradient(90deg, #00d4ff, #00a2ff);
             -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            -webkit-text-fill-color: transparent;*/
             margin-bottom: 1.5rem;
+            color: white;
         }
 
         .result-container p {
@@ -306,7 +296,8 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
         }
 
         .not-my-name-btn {
-            margin-top: 2rem;
+            margin-top: 0.2rem;
+            margin-bottom: 0.5rem;
             padding: 0.8rem 2rem;
             font-size: 1rem;
             font-weight: 600;
@@ -418,15 +409,19 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 
 <body>
     <h2>Red Chariots</h2>
-    <h6>Digital Attendance System</h6>
+    <h6 style="text-align: center;">Digital Attendance System</h6>
 
     <!-- Action Panel covering the video initially -->
     <div id="action-panel">
-        <h2>Red Chariots Digital Attendance</h2>
-        <h6>CHOOSE THE ACTION</h6>
-        <div id="action-select">
-            <button onclick="setAction('check-in')">Check In</button>
-            <button onclick="setAction('check-out')">Check Out</button>
+        <div style="width: 85%; margin:auto;">
+            <h2>Red Chariots <br> Digital Attendance</h2>
+            <h6 style="text-align: center;">CHOOSE THE ACTION</h6>
+            <div id="action-select">
+            <button onclick="setAction('check-in')" style="background-color: green;">Check In</button>
+            <button onclick="setAction('check-in-permission')" style="background-color: MediumSeaGreen;">Late Check-In with Permission</button>
+            <button onclick="setAction('check-out-permission')" style="background-color: tomato;">Early Check-Out with Permission</button>
+            <button onclick="setAction('check-out')" style="background-color: red;">Check Out</button>
+            </div>
         </div>
     </div>
 
@@ -437,7 +432,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
         </div>
     </div>
 
-    <div id="output">Initializing...</div>
+    <div id="output">Hold On, Setting things up...</div>
     <div id="loading">Loading models, please wait...</div>
 
     <div id="result-container" class="result-container" style="display:none;">
@@ -445,9 +440,10 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             <button id="notMyNameBtn" class="not-my-name-btn">Not my name (5)</button>
         </div>
         <h1 id="greeting"></h1>
+        <p id="warnings" style="font-family: 'Courier New', Courier, monospace; color: yellow;"></p>
         <p><strong>Time:</strong><span id="timestamp" style="font-family: 'Courier New', Courier, monospace;"></span>
         </p>
-        <img id="photo" src="" alt="Captured Photo" />
+        <img id="photo" src="" alt="Captured Photo" style="display: none;"/>
     </div>
 
 
@@ -472,7 +468,6 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             document.getElementById('loading').style.display = 'none'; // Hide loading text once models are ready
         }
 
-<<<<<<<< HEAD:test.php
         async function loadLabeledDescriptors() {
             const response = await fetch('./descriptors.json');
             const data = await response.json();
@@ -480,26 +475,6 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             const parsedDescriptors = descriptors.map(d => new Float32Array(d));
             return new faceapi.LabeledFaceDescriptors(label, parsedDescriptors);
             });
-========
-        async function loadLabeledImages() {
-            const labels = ['nirmal', 'khaja', 'nita', 'hari', 'roopa', 'muni', 'abitha', 'veena', 'vasanth'];
-            return Promise.all(
-                labels.map(async label => {
-                    const descriptors = [];
-                    for (let i = 1; i <= 5; i++) {
-                        const imgUrl = `./labels/${label}/${label}${i}.jpg`;
-                        const img = await faceapi.fetchImage(imgUrl);
-                        const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
-                            .withFaceLandmarks()
-                            .withFaceDescriptor();
-                        if (detection) {
-                            descriptors.push(detection.descriptor);
-                        }
-                    }
-                    return new faceapi.LabeledFaceDescriptors(label, descriptors);
-                })
-            );
->>>>>>>> 734363640cb4171a4cae9cc370d164a0b85bcc4b:php/test.php
         }
 
         async function captureAndRedirect(matchedLabel) {
@@ -539,6 +514,40 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             localStorage.setItem('checkinData', JSON.stringify(data));
             showResultInline(data);
         }
+        
+        let lastMessageIndex = -1; // To track the last used message and avoid immediate repeat
+
+        const checkInMessages = [
+            "Today’s yours to win, {name}! 🏆",
+            "Go get ‘em, {name}! 🚀",
+            "Own today, {name}! 🎯",
+            "The day’s ready for you, {name}! 🌟",
+            "Nothing can stop you today, {name}! 🔥",
+            "Bring the fire today, {name}! 🔥",
+            "Let’s make today count, {name}! 🧮"
+        ];
+
+        const checkOutMessages = [
+            "You made it happen, {name}! 🎉",
+            "Another win in the bag, {name}! 👜",
+            "Solid finish, {name}! 🏁",
+            "Great work today, {name}! 💼",
+            "You’re unstoppable, {name}! 🚀",
+            "Signing off like a star, {name}! ⭐",
+            "Big energy, {name} — see you tomorrow! ⚡",
+            "Mission complete, {name}! 🎯",
+            "Strong finish, {name}! 💪",
+        ];
+
+function getRandomMessage(messages, name) {
+    let index;
+    do {
+        index = Math.floor(Math.random() * messages.length);
+    } while (index === lastMessageIndex && messages.length > 1);
+
+    lastMessageIndex = index;
+    return messages[index].replace("{name}", name);
+}
 
         function showResultInline(data) {
             document.querySelector('.video-container').style.display = 'none';
@@ -548,9 +557,52 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 
 
             const greeting = document.getElementById("greeting");
-            greeting.innerText = data.action === "check-in"
+            const warning = document.getElementById("warnings");
+            
+            /*greeting.innerText = (data.action === "check-in" || data.action === "check-in-permission")
                 ? `Welcome, ${data.name}!`
-                : `Goodbye, ${data.name}!`;
+                : `Goodbye, ${data.name}!`;*/
+                
+            if (data.action === "check-in"){
+                const timeString = data.timestamp.split(" - ")[1]; // Get time part
+                const [time, period] = timeString.split(' '); // Split "hh:mm:ss AM/PM"
+                const [hourStr, minuteStr] = time.split(':');
+                let hour = parseInt(hourStr, 10);
+                const minute = parseInt(minuteStr, 10);
+        
+                // Convert to 24-hour format if needed
+                if (period === 'PM' && hour !== 12) {
+                    hour += 12;
+                }
+                if (period === 'AM' && hour === 12) {
+                    hour = 0; // Midnight case
+                }
+        
+                let message = getRandomMessage(checkInMessages, data.name);
+                let _warning = "";
+                
+                if (hour < 9 || (hour === 9 && minute <= 40)) {
+                    _warning += " You are on time. Good job!";
+                } else if (hour === 9 && minute >= 41 && minute <= 59) {
+                    _warning += " You are late. Please try to be on time!";
+                } else if (hour >= 10) {
+                    _warning += " You are very late. Management is being notified. Please be careful!";
+                }
+
+                greeting.innerText = message;
+                warning.innerText = _warning;
+            }
+            else if (data.action === "check-in-permission") 
+            {
+                let message = getRandomMessage(checkInMessages, data.name);
+                warning.innerText = "";
+                greeting.innerText = message;
+            }
+            else {
+                let message = getRandomMessage(checkOutMessages, data.name);
+                warning.innerText = "";
+                greeting.innerText = message;
+            }
 
             document.getElementById("timestamp").innerText = data.timestamp;
             document.getElementById("photo").src = data.photo;
@@ -615,7 +667,8 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                     : "✅ Check-out successful!";
                 Object.assign(toast.style, {
                     position: "fixed",
-                    bottom: "40px",
+                    /*bottom: "40px",*/
+                    top: "65%",
                     left: "50%",
                     transform: "translateX(-50%)",
                     background: "#16a34a",
@@ -736,17 +789,36 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                 }
             });
         }
-
+        
         let faceMatcher;
         async function start() {
             try {
-                await faceapi.nets.tinyFaceDetector.loadFromUri('models');
+                /*await faceapi.nets.tinyFaceDetector.loadFromUri('models');
                 await faceapi.nets.faceLandmark68Net.loadFromUri('models');
                 await faceapi.nets.faceRecognitionNet.loadFromUri('models');
                 document.getElementById('loading').style.display = 'none';
 
-                await getLocation();
-                const labeledDescriptors = await loadLabeledDescriptors();
+                //await getLocation();    //commented due to http, having issues in many devices
+                const labeledDescriptors = await loadLabeledDescriptors();*/
+                
+                // Load models and descriptors in parallel
+                const [models, descriptorsData] = await Promise.all([
+                    Promise.all([
+                        faceapi.nets.tinyFaceDetector.loadFromUri('models'),
+                        faceapi.nets.faceLandmark68Net.loadFromUri('models'),
+                        faceapi.nets.faceRecognitionNet.loadFromUri('models')
+                    ]),
+                    fetch('./descriptors.json').then(res => res.json())
+                ]);
+
+                // Convert descriptor data to proper format
+                const labeledDescriptors = Object.entries(descriptorsData).map(([label, descriptors]) => 
+                    new faceapi.LabeledFaceDescriptors(
+                    label, 
+                    descriptors.map(d => new Float32Array(d))
+                    )
+                );               
+               
                 faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45);
 
                 const video = document.getElementById('video');

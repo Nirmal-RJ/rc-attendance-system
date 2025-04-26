@@ -11,7 +11,6 @@ const performance = {
     modelLoadTime: 0,
     detectionTime: 0,
     lastDetectionStart: 0
-};
 
 // Loading indicator functions
 function showLoadingIndicator(message = "Loading face detection models...") {
@@ -118,7 +117,7 @@ async function setAction(type)
             document.getElementsByClassName("checking-button")[1].style.display = "none";
     
             actionType = type;
-            getLocation();
+            getLocation();    //no need location for office app
     
             // Ensure models are loaded
             await loadModels();
@@ -184,7 +183,7 @@ async function startWebcam() {
 
 // Face detection functions
 async function getLabeledFaceDescriptions() {
-    const labels = ["nita", "roopa", "hari", "khaja", "nirmal"];
+    const labels = ['nirmal', 'khaja', 'nita', 'hari', 'roopa', 'muni', 'abitha', 'veena', 'vasanth', 'mani', 'kili', 'palani', 'kumar', 'praveen', 'vk', 'musthafa', 'ali', 'aarthi', 'ijaz'];
     const maxRetries = 3;
 
     try {

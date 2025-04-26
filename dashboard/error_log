@@ -1,0 +1,11 @@
+[26-Apr-2025 08:57:21 UTC] PHP Fatal error:  Uncaught Error: Undefined constant "console" in /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/dashboard/index.php:95
+Stack trace:
+#0 {main}
+  thrown in /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/dashboard/index.php on line 95
+[26-Apr-2025 09:02:57 UTC] PHP Warning:  Undefined variable $imgSrc in /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/dashboard/index.php on line 116
+[26-Apr-2025 13:02:20 UTC] PHP Warning:  Undefined variable $searchDate in /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/dashboard/full-history.php on line 227
+[26-Apr-2025 13:56:04 UTC] PHP Parse error:  syntax error, unexpected identifier "check", expecting "," or ";" in /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/dashboard/full-history.php on line 231
+[26-Apr-2025 14:00:52 UTC] PHP Fatal error:  Uncaught TypeError: Unsupported operand types: string * int in /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/dashboard/full-history.php:238
+Stack trace:
+#0 {main}
+  thrown in /home/axn88fekl19d/public_html/redchariotstechnologies.com/rc-attendance-system/dashboard/full-history.php on line 238
