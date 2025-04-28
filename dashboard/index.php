@@ -222,7 +222,7 @@ try {
     $selectedDate = isset($_GET['date']) ? $_GET['date'] : date('Y-m-d');
     $searchDate = date('M d Y', strtotime($selectedDate));
 
-    $query = "SELECT ID, name, timestamp, action FROM data WHERE timestamp LIKE :date ORDER BY timestamp DESC";
+    $query = "SELECT ID, name, timestamp, action, ServerTimeStamp FROM data WHERE timestamp LIKE :date ORDER BY ServerTimeStamp DESC";
     $stmt = $conn->prepare($query);
     $stmt->execute([':date' => "%$searchDate%"]);
     $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -252,11 +252,16 @@ try {
                 $permissionMessage = " - (has permission)";
             break;
         }
+        
+        $serverTimestamp = $row['ServerTimeStamp'];
+        // Add 11 hours 30 minutes to the server time for display
+        $adjustedServerTimestamp = strtotime($serverTimestamp) + (12 * 60 * 60) + (30 * 60);    //to compensate 12 hours 30 mins difference in godaddy server
+        $adjustedServerTimestamp = date('Y-m-d H:i:s', $adjustedServerTimestamp);  // Format to readable timestamp
 
         echo '<tr class="' . $rowClass . '">
                 <td>'.htmlspecialchars($row['ID']).'</td>
                 <td>'.htmlspecialchars($row['name']).'</td>
-                <td>'.htmlspecialchars($row['timestamp']). $permissionMessage.'</td>
+                <td>'.htmlspecialchars($adjustedServerTimestamp). $permissionMessage.'</td>
                 <td class="'.$actionClass.'">'.htmlspecialchars($rowClass).'</td>
                 <td><a href="#" class="view-photo-link" data-id="'.htmlspecialchars($row['ID']).'">View Photo</a></td>
               </tr>';

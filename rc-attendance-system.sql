@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Apr 24, 2025 at 11:38 PM
+-- Generation Time: Apr 27, 2025 at 08:19 PM
 -- Server version: 10.6.21-MariaDB-cll-lve
 -- PHP Version: 8.3.15
 
@@ -52,7 +52,8 @@ CREATE TABLE `data` (
   `timestamp` varchar(100) NOT NULL,
   `location` varchar(255) NOT NULL,
   `photo` longtext NOT NULL,
-  `action` varchar(100) NOT NULL
+  `action` varchar(100) NOT NULL,
+  `ServerTimeStamp` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
