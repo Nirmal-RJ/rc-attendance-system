@@ -246,7 +246,11 @@
         $serverTimestamp = $row['ServerTimeStamp'];
         // Add 11 hours 30 minutes to the server time for display
         $adjustedServerTimestamp = strtotime($serverTimestamp) + (12 * 60 * 60) + (30 * 60);    //to compensate 12 hours 30 mins difference in godaddy server
-        $adjustedServerTimestamp = date('Y-m-d H:i:s', $adjustedServerTimestamp);  // Format to readable timestamp
+        
+        //$adjustedServerTimestamp = date('Y-m-d H:i:s', $adjustedServerTimestamp);  // Format to readable timestamp
+        
+        // Format to readable format with shortened day, date, month, year, and time
+        $adjustedServerTimestamp = date('D, d M Y - H:i:s', $adjustedServerTimestamp);  // 'D' for abbreviated day, 'M' for abbreviated month
 
         echo '<tr class="' . $rowClass . '">
                 <td>'.htmlspecialchars($row['ID']).'</td>
